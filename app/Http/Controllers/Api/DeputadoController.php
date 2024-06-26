@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use App\Models\Despesa; // Importe o modelo Despesa aqui
 use App\Models\Deputado; // Importe o modelo Despesa aqui
 use GuzzleHttp\Client;
+
 
 
 class DeputadoController extends Controller
@@ -14,19 +16,18 @@ class DeputadoController extends Controller
 
     public function index(Request $request)
     {
+        $query = Deputado::query();
 
-        $query = Deputado::query()->inRandomOrder();
+
+            $query->inRandomOrder();
 
 
         $deputadosIds = $query->pluck('id')->toArray();
 
-
         $valorTotal2023 = $this->calcularValorTotal($deputadosIds, 2023);
         $valorTotal2024 = $this->calcularValorTotal($deputadosIds, 2024);
 
-
-        $deputados = $query->paginate($request->input('per_page', 12));
-
+        $deputados = $query->paginate($request->input('per_page', 8));
 
         $deputados->each(function ($deputado) use ($valorTotal2023, $valorTotal2024) {
             $deputado->valor_total_2023 = $valorTotal2023[$deputado->id] ?? 0;
@@ -37,6 +38,56 @@ class DeputadoController extends Controller
         return response()->json($deputados);
     }
 
+    public function indexSearch(Request $request)
+    {
+        try {
+            $query = Deputado::query();
+
+            // Aplicar filtro por nome
+            if ($request->has('name')) {
+                $query->where('nome', 'like', '%' . $request->input('name') . '%');
+            }
+
+            // Aplicar filtro por partido (caso tenha relação)
+            // Exemplo: $request->has('party_id') e relação com a tabela de Partidos
+
+           // Aplicar filtro por valor máximo de gasto
+           $maxExpense = (float) $request->input('max_expense');
+           if ($maxExpense > 0) {
+
+                $maxExpense = (float) $request->input('max_expense');
+
+                $query->whereHas('despesas', function ($q) use ($maxExpense) {
+                    // Calcula o valor total das despesas (SUM) e compara com $maxExpense
+                    $q->selectRaw('sum(valor_liquido) as total_despesas')
+                    ->having('total_despesas', '<=', $maxExpense);
+                });
+            }
+
+            $perPage = $request->input('per_page', 8);
+
+            $sortBy = $request->input('sort_by', 'nome'); // Coloque o padrão desejado aqui
+            $sortOrder = $request->input('sort_order', 'asc');
+            $query->orderBy($sortBy, $sortOrder);
+
+            $deputados = $query->paginate($perPage);
+
+
+            $deputados->each(function ($deputado) {
+                $deputado->valor_total_2023 = $this->calcularValorTotal([$deputado->id], 2023)[$deputado->id] ?? 0;
+                $deputado->valor_total_2024 = $this->calcularValorTotal([$deputado->id], 2024)[$deputado->id] ?? 0;
+                $deputado->valor_total_2023_2024 = $deputado->valor_total_2023 + $deputado->valor_total_2024;
+
+            });
+
+            return response()->json($deputados);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao buscar deputados: ' . $e->getMessage()], 500);
+        }
+    }
+
+
     private function calcularValorTotal(array $deputadosIds, int $ano)
     {
         return Despesa::select('deputado_id', \DB::raw('SUM(valor_documento) as total_gasto'))
@@ -46,6 +97,7 @@ class DeputadoController extends Controller
             ->pluck('total_gasto', 'deputado_id')
             ->toArray();
     }
+
 
     public function deputado(Request $request, $slug)
     {

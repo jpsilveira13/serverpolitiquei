@@ -22,11 +22,14 @@ Route::get('/deputado/{deputado_id}/orgaos', [DeputadoController::class, 'orgaos
 
 
 Route::get('/deputados', [DeputadoController::class, 'index']);
+Route::get('/deputados-list', [DeputadoController::class, 'indexSearch']);
 Route::get('/ranking', [DeputadoController::class, 'rankingGastadores']);
 
 
 
 Route::get('/partidos', [PartidoController::class, 'index']);
+Route::get('/get-partidos', [PartidoController::class, 'getPartidosScreen']);
+
 
 
 // Route::get('/atualizar-slug', [DeputadoController::class, 'atualizarSlugs']);

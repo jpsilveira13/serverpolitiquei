@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Partido;
 use App\Models\Deputado;
-
+use Illuminate\Support\Facades\DB;
 
 
 class PartidoController extends Controller
@@ -22,5 +22,28 @@ class PartidoController extends Controller
         }
         return response()->json($partidos);
     }
+
+
+    public function getPartidosScreen()
+{
+    $partidos = Partido::with(['deputados' => function ($query) {
+            $query->with(['despesas' => function ($subQuery) {
+                    $subQuery->select('deputado_id', DB::raw('SUM(valor_liquido) as total_despesas'))
+                        ->groupBy('deputado_id');
+                }])
+                ->orderByDesc('total_despesas') // Ordena os deputados por despesas decrescente
+                ->take(3); // Pega apenas os 3 deputados com maiores despesas
+        }])
+        ->get()
+        ->map(function ($partido) {
+            $partido->gasto_total = $partido->deputados->sum('total_despesas');
+            return $partido;
+        });
+
+    return response()->json($partidos);
+}
+
+
+
 
 }
