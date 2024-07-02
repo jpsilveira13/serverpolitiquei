@@ -48,10 +48,10 @@ class DeputadoController extends Controller
                 $query->where('nome', 'like', '%' . $request->input('name') . '%');
             }
 
-            // Aplicar filtro por partido (caso tenha relação)
-            // Exemplo: $request->has('party_id') e relação com a tabela de Partidos
+            if ($request->has('party_id')) {
+                $query->where('sigla_partido', 'like', '%' . $request->input('party_id') . '%');
+            }
 
-           // Aplicar filtro por valor máximo de gasto
            $maxExpense = (float) $request->input('max_expense');
            if ($maxExpense > 0) {
 
@@ -224,6 +224,19 @@ class DeputadoController extends Controller
         } catch (RequestException $e) {
             return response()->json(['error' => 'Erro ao buscar dados do deputado'], 500);
         }
+    }
+
+    public function buscarNomeDeputado($nome)
+    {
+
+        $deputados = Deputado::where('nome', 'like', "%{$nome}%")->limit(6)->with('partido')->get();
+        $deputados->each(function ($deputado) {
+            $totalGastos = Despesa::where('deputado_id', $deputado->id)->sum('valor_liquido');
+            $deputado->total_gastos = $totalGastos;
+        });
+
+        return response()->json($deputados);
+
     }
 
 }

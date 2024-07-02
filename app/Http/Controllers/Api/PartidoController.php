@@ -25,25 +25,22 @@ class PartidoController extends Controller
 
 
     public function getPartidosScreen()
-{
-    $partidos = Partido::with(['deputados' => function ($query) {
-            $query->with(['despesas' => function ($subQuery) {
-                    $subQuery->select('deputado_id', DB::raw('SUM(valor_liquido) as total_despesas'))
-                        ->groupBy('deputado_id');
-                }])
-                ->orderByDesc('total_despesas') // Ordena os deputados por despesas decrescente
-                ->take(3); // Pega apenas os 3 deputados com maiores despesas
+    {
+        $partidos = Partido::withCount(['deputados as gasto_total' => function ($query) {
+            $query->select(DB::raw('SUM(despesas.valor_liquido)'))
+                ->join('despesas', 'deputados.id', '=', 'despesas.deputado_id');
         }])
-        ->get()
-        ->map(function ($partido) {
-            $partido->gasto_total = $partido->deputados->sum('total_despesas');
-            return $partido;
-        });
+        ->orderBy('gasto_total', 'desc')
+        ->get();
 
-    return response()->json($partidos);
-}
+        return response()->json($partidos);
+    }
 
+    public function listPartidos()
+    {
+        $partidos = Partido::orderBy('nome', 'asc')->get();
 
-
+        return response()->json($partidos);
+    }
 
 }

@@ -13,6 +13,8 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::get('/deputado/{slug}', [DeputadoController::class, 'deputado']);
+Route::get('/buscar-deputado/{nome}', [DeputadoController::class, 'buscarNomeDeputado']);
+
 Route::get('/deputado/{deputado_id}/despesas', [DeputadoController::class, 'deputadoDespesa']);
 Route::get('/deputados/random', [DeputadoController::class, 'deputadosAleatorios']);
 Route::get('/deputado/{deputado_id}/mandatosExternos', [DeputadoController::class, 'mandatosExternos']);
@@ -29,6 +31,8 @@ Route::get('/ranking', [DeputadoController::class, 'rankingGastadores']);
 
 Route::get('/partidos', [PartidoController::class, 'index']);
 Route::get('/get-partidos', [PartidoController::class, 'getPartidosScreen']);
+Route::get('/list-partidos', [PartidoController::class, 'listPartidos']);
+
 
 
 
