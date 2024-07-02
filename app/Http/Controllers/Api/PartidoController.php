@@ -32,7 +32,12 @@ class PartidoController extends Controller
         }])
         ->orderBy('gasto_total', 'desc')
         ->get();
+        $liderNomes = $partidos->pluck('lider_nome')->unique();
+        $lideres = Deputado::whereIn('nome', $liderNomes)->get()->keyBy('nome');
 
+        foreach ($partidos as $partido) {
+            $partido->lider_url_foto = $lideres[$partido->lider_nome]->url_foto ?? null;
+        }
         return response()->json($partidos);
     }
 
