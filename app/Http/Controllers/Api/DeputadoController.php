@@ -16,27 +16,35 @@ class DeputadoController extends Controller
 
     public function index(Request $request)
     {
-        $query = Deputado::query();
-
-
+        try {
+            $query = Deputado::query();
             $query->inRandomOrder();
 
+            $perPage = $request->input('per_page', 8);
+            $deputados = $query->paginate($perPage);
 
-        $deputadosIds = $query->pluck('id')->toArray();
+            // Pegar os IDs dos deputados paginados
+            $deputadosIds = $deputados->pluck('id')->toArray();
 
-        $valorTotal2023 = $this->calcularValorTotal($deputadosIds, 2023);
-        $valorTotal2024 = $this->calcularValorTotal($deputadosIds, 2024);
+            // Calcular o valor total gasto para os deputados paginados
+            $valorTotal2023_2024 = $this->calcularValorTotal($deputadosIds);
 
-        $deputados = $query->paginate($request->input('per_page', 8));
+            // Atribuir o valor total 2023-2024 para cada deputado
+            $deputados->each(function ($deputado) use ($valorTotal2023_2024) {
+                // Verificar se o ID do deputado está presente no array calculado
+                if (isset($valorTotal2023_2024[$deputado->id])) {
+                    $deputado->valor_total = $valorTotal2023_2024[$deputado->id];
+                } else {
+                    $deputado->valor_total = 0; // Valor padrão se não houver correspondência
+                }
+            });
 
-        $deputados->each(function ($deputado) use ($valorTotal2023, $valorTotal2024) {
-            $deputado->valor_total_2023 = $valorTotal2023[$deputado->id] ?? 0;
-            $deputado->valor_total_2024 = $valorTotal2024[$deputado->id] ?? 0;
-            $deputado->valor_total_2023_2024 = $deputado->valor_total_2023 + $deputado->valor_total_2024;
-        });
-
-        return response()->json($deputados);
+            return response()->json($deputados);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao buscar deputados: ' . $e->getMessage()], 500);
+        }
     }
+
 
     public function indexSearch(Request $request)
     {
@@ -52,33 +60,31 @@ class DeputadoController extends Controller
                 $query->where('sigla_partido', 'like', '%' . $request->input('party_id') . '%');
             }
 
-           $maxExpense = (float) $request->input('max_expense');
-           if ($maxExpense > 0) {
-
-                $maxExpense = (float) $request->input('max_expense');
-
-                $query->whereHas('despesas', function ($q) use ($maxExpense) {
-                    // Calcula o valor total das despesas (SUM) e compara com $maxExpense
-                    $q->selectRaw('sum(valor_liquido) as total_despesas')
-                    ->having('total_despesas', '<=', $maxExpense);
-                });
-            }
-
             $perPage = $request->input('per_page', 8);
 
-            $sortBy = $request->input('sort_by', 'nome'); // Coloque o padrão desejado aqui
-            $sortOrder = $request->input('sort_order', 'asc');
-            $query->orderBy($sortBy, $sortOrder);
+           $maxExpense = (float) $request->input('max_expense');
+            if($maxExpense > 0.0){
+                $query->withSum('despesas', 'valor_liquido')
+                ->when($maxExpense > 0, function ($query) use ($maxExpense) {
+                    $query->whereHas('despesas', function ($q) use ($maxExpense) {
+                        $q->selectRaw('sum(valor_liquido) as total_despesas')
+                            ->having('total_despesas', '<=', $maxExpense);
+                    });
+                })
+                ->orderByDesc('despesas_sum_valor_liquido');
+
+            }else{
+                $sortBy = $request->input('sort_by', 'nome'); // Coloque o padrão desejado aqui
+                $sortOrder = $request->input('sort_order', 'asc');
+                $query->orderBy($sortBy, $sortOrder);
+            }
 
             $deputados = $query->paginate($perPage);
-
-
             $deputados->each(function ($deputado) {
-                $deputado->valor_total_2023 = $this->calcularValorTotal([$deputado->id], 2023)[$deputado->id] ?? 0;
-                $deputado->valor_total_2024 = $this->calcularValorTotal([$deputado->id], 2024)[$deputado->id] ?? 0;
-                $deputado->valor_total_2023_2024 = $deputado->valor_total_2023 + $deputado->valor_total_2024;
+                $deputado->valor_total = $this->calcularValorTotal([$deputado->id])[$deputado->id] ?? 0;
 
             });
+
 
             return response()->json($deputados);
 
@@ -88,11 +94,10 @@ class DeputadoController extends Controller
     }
 
 
-    private function calcularValorTotal(array $deputadosIds, int $ano)
+    private function calcularValorTotal(array $deputadosIds)
     {
-        return Despesa::select('deputado_id', \DB::raw('SUM(valor_documento) as total_gasto'))
+        return Despesa::select('deputado_id', \DB::raw('SUM(valor_liquido) as total_gasto'))
             ->whereIn('deputado_id', $deputadosIds)
-            ->where('ano', $ano)
             ->groupBy('deputado_id')
             ->pluck('total_gasto', 'deputado_id')
             ->toArray();
@@ -132,7 +137,9 @@ class DeputadoController extends Controller
 
         $page = $request->query('page', 1);
         $despesas = Despesa::where('deputado_id', $deputado_id)
+                            ->orderBy('data_emissao', 'desc')
                             ->orderBy('valor_liquido', 'desc')
+
                             ->paginate(5, ['*'], 'page', $page);
 
         return response()->json($despesas);
@@ -152,7 +159,7 @@ class DeputadoController extends Controller
 
     public function rankingGastadores() {
 
-        $topGastadores = Despesa::select('deputado_id', \DB::raw('SUM(valor_documento) as total_gastos'))
+        $topGastadores = Despesa::select('deputado_id', \DB::raw('SUM(valor_liquido) as total_gastos'))
             ->groupBy('deputado_id')
             ->orderBy('total_gastos', 'desc')
             ->take(10)
