@@ -23,10 +23,12 @@ class SyncFuncionarios extends Command
             // Define a lista de vínculos a ser passada como parâmetro
             $listaVinculo = [
 
-                "COMISSIONADO",
+                "AGENTE_POLITIVO",
 
 
             ];
+
+            #COMISSIONADO
 
             // Faz a requisição para o endpoint getFuncionarios
             $response = Http::timeout(120)->put('https://prefeitura.uberaba.mg.gov.br/GRP/portalcidadao/webservices/GFPFuncionario/getFuncionarios', [
