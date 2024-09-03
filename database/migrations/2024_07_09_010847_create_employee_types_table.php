@@ -16,14 +16,14 @@ class CreateEmployeeTypesTable extends Migration
 
         // Inserir os tipos de funcionários
         $employeeTypes = [
-            ['name' => 'EFETIVO'],
-            ['name' => 'COMISSIONADO'],
-            ['name' => 'AGENTE_POLITIVO'],
-            ['name' => 'CONTRATADO'],
-            ['name' => 'ESTAGIARIO'],
-            ['name' => 'ESTAVEL'],
-            ['name' => 'FUNCAO_PUBLICA'],
-            ['name' => 'CONCURSADO'],
+            ['name' => 'Efetivo'],
+            ['name' => 'Comissionado'],
+            ['name' => 'Agente Político'],
+            ['name' => 'Contratado'],
+            ['name' => 'Estagiário'],
+            ['name' => 'Estável'],
+            ['name' => 'Função Pública'],
+            ['name' => 'Concursado'],
         ];
 
         DB::table('employee_types')->insert($employeeTypes);

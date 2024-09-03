@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\DeputadoController;
 use App\Http\Controllers\Api\PartidoController;
+use App\Http\Controllers\Api\FuncionarioPublicoController;
+
 
 
 
@@ -28,10 +30,15 @@ Route::get('/deputados-list', [DeputadoController::class, 'indexSearch']);
 Route::get('/ranking', [DeputadoController::class, 'rankingGastadores']);
 
 
-
+//PARTIDOS
 Route::get('/partidos', [PartidoController::class, 'index']);
 Route::get('/get-partidos', [PartidoController::class, 'getPartidosScreen']);
 Route::get('/list-partidos', [PartidoController::class, 'listPartidos']);
+
+//Funcionários públicos
+
+Route::get('/funcionarios-publicos', [FuncionarioPublicoController::class, 'index']);
+
 
 
 

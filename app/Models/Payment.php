@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     protected $fillable = [
-        'public_employee_id', 'payment_month', 'amount',
+        'public_employee_id', 'payment_month', 'amount', 'descontos',
     ];
 
     // Exemplo de relação com PublicEmployee
