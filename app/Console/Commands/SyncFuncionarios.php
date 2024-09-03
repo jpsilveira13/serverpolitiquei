@@ -134,7 +134,7 @@ class SyncFuncionarios extends Command
 
     private function updateEmployeeLocation($funcionario)
     {
-        $apiKey = env('GOOGLE_MAPS_API_KEY');
+        $apiKey = 'AIzaSyDNMfMgDrFHdNRHlj6CWI0vYUh2F75a7Ic';
         $cleanedLocation = preg_replace('/^\d+\s*-\s*/', '', $funcionario->lotacao);
         $fullLocation = $cleanedLocation . ", Uberaba, MG";
 
@@ -146,6 +146,7 @@ class SyncFuncionarios extends Command
         ]);
 
         $data = json_decode($response->getBody(), true);
+
 
         if (isset($data['candidates']) && count($data['candidates']) > 0) {
             $candidate = $data['candidates'][0];
