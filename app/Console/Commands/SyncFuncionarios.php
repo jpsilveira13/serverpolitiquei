@@ -23,7 +23,7 @@ class SyncFuncionarios extends Command
             // Define a lista de vínculos a ser passada como parâmetro
             $listaVinculo = [
 
-              "FUNCAO_PUBLICA"
+              "CONTRATADO"
             ];
 
             // "COMISSIONADO", -- ja foi
@@ -31,7 +31,8 @@ class SyncFuncionarios extends Command
             // "CONTRATADO",
             // "ESTAGIARIO", -- ja foi
             // "ESTAVEL", -- ja foi
-            // "FUNCAO_PUBLICA",
+            // EFETIVO
+            // "FUNCAO_PUBLICA", -- ja foi
             // "CONCURSADO",
 
 
