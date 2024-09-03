@@ -23,12 +23,17 @@ class SyncFuncionarios extends Command
             // Define a lista de vínculos a ser passada como parâmetro
             $listaVinculo = [
 
-                "AGENTE_POLITIVO",
-
-
+              "ESTAGIARIO"
             ];
 
-            #COMISSIONADO
+            // "COMISSIONADO", -- ja foi
+            // "AGENTE_POLITIVO", -- ja foi
+            // "CONTRATADO",
+            // "ESTAGIARIO",
+            // "ESTAVEL",
+            // "FUNCAO_PUBLICA",
+            // "CONCURSADO",
+
 
             // Faz a requisição para o endpoint getFuncionarios
             $response = Http::timeout(120)->put('https://prefeitura.uberaba.mg.gov.br/GRP/portalcidadao/webservices/GFPFuncionario/getFuncionarios', [
@@ -81,9 +86,7 @@ class SyncFuncionarios extends Command
                 'val0' => $funcionario->matricula
             ]);
 
-
             $data = json_decode($response->getBody(), true);
-
 
             // Processa os dados adicionais do funcionário
             $funcionario->update([
@@ -148,7 +151,6 @@ class SyncFuncionarios extends Command
         ]);
 
         $data = json_decode($response->getBody(), true);
-
 
         if (isset($data['candidates']) && count($data['candidates']) > 0) {
             $candidate = $data['candidates'][0];
