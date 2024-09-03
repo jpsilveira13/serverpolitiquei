@@ -140,35 +140,43 @@ class SyncFuncionarios extends Command
         }
     }
 
-    private function updateEmployeeLocation($funcionario)
-    {
+    private function updateEmployeeLocation($funcionario){
         $apiKey = 'AIzaSyDNMfMgDrFHdNRHlj6CWI0vYUh2F75a7Ic';
         $cleanedLocation = preg_replace('/^\d+\s*-\s*/', '', $funcionario->lotacao);
         $fullLocation = $cleanedLocation . ", Uberaba, MG";
 
-        $response = Http::get("https://maps.googleapis.com/maps/api/place/findplacefromtext/json", [
-            'input' => $fullLocation,
-            'inputtype' => 'textquery',
-            'fields' => 'formatted_address,geometry',
-            'key' => $apiKey,
-        ]);
+        try {
+            $response = Http::timeout(120)->get("https://maps.googleapis.com/maps/api/place/findplacefromtext/json", [
+                'input' => $fullLocation,
+                'inputtype' => 'textquery',
+                'fields' => 'formatted_address,geometry',
+                'key' => $apiKey,
+            ]);
 
-        $data = json_decode($response->getBody(), true);
+            $data = json_decode($response->getBody(), true);
 
-        if (isset($data['candidates']) && count($data['candidates']) > 0) {
-            $candidate = $data['candidates'][0];
-            $newAddress = $candidate['formatted_address'];
-            $latitude = $candidate['geometry']['location']['lat'];
-            $longitude = $candidate['geometry']['location']['lng'];
+            if (isset($data['candidates']) && count($data['candidates']) > 0) {
+                $candidate = $data['candidates'][0];
+                $newAddress = $candidate['formatted_address'];
+                $latitude = $candidate['geometry']['location']['lat'];
+                $longitude = $candidate['geometry']['location']['lng'];
 
-            // Atualiza somente se o endereço mudou ou se a latitude/longitude for nula
-            if ($funcionario->local_trabalho !== $newAddress || $funcionario->latitude === null || $funcionario->longitude === null) {
-                $funcionario->local_trabalho = $newAddress;
-                $funcionario->latitude = $latitude;
-                $funcionario->longitude = $longitude;
-                $funcionario->save();
+                // Atualiza somente se o endereço mudou ou se a latitude/longitude for nula
+                if ($funcionario->local_trabalho !== $newAddress || $funcionario->latitude === null || $funcionario->longitude === null) {
+                    $funcionario->local_trabalho = $newAddress;
+                    $funcionario->latitude = $latitude;
+                    $funcionario->longitude = $longitude;
+                    $funcionario->save();
+                }
             }
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            // Log do erro ou qualquer outra ação que queira tomar em caso de timeout
+            $this->warn('Timeout ao tentar atualizar a localização do funcionário: ' . $funcionario->matricula);
+        } catch (\Exception $e) {
+            // Captura qualquer outro tipo de exceção
+            $this->error('Erro ao atualizar a localização do funcionário: ' . $e->getMessage());
         }
     }
+
 
 }
