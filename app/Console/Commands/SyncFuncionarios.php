@@ -81,7 +81,7 @@ class SyncFuncionarios extends Command
 
 
             $data = json_decode($response->getBody(), true);
-            dd($data);
+
 
             // Processa os dados adicionais do funcionário
             $funcionario->update([
