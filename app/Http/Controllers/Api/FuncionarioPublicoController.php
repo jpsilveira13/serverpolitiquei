@@ -22,9 +22,11 @@ class FuncionarioPublicoController extends Controller
         }
 
         // Filtragem por tipo de funcionário
-        if ($request->has('employee_type_id') && $request->employee_type_id !== '') {
+        if ($request->has('employee_type_id') && $request->employee_type_id !== null) {
+
             $baseQuery->where('employee_type_id', $request->employee_type_id);
         }
+
 
         // Calcula a quantidade total de funcionários
         $totalEmployees = $baseQuery->count();
