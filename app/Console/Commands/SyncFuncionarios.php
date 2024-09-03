@@ -23,7 +23,7 @@ class SyncFuncionarios extends Command
             // Define a lista de vínculos a ser passada como parâmetro
             $listaVinculo = [
 
-              "TERCEIRO"
+              "EFETIVO"
             ];
 
             // "COMISSIONADO", -- ja foi
@@ -33,7 +33,9 @@ class SyncFuncionarios extends Command
             // "ESTAVEL", -- ja foi
             // EFETIVO
             // "FUNCAO_PUBLICA", -- ja foi
-            // "CONCURSADO",
+            // "CONCURSADO", não tem
+            // "Terceiro", ja foi
+
 
 
             // Faz a requisição para o endpoint getFuncionarios
