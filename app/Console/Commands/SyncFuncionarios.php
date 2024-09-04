@@ -18,12 +18,13 @@ class SyncFuncionarios extends Command
     public function handle()
     {
         $client = new Client();
+        $count = 0;
 
         try {
             // Define a lista de vínculos a ser passada como parâmetro
             $listaVinculo = [
 
-              "EFETIVO"
+              "AGENTE_POLITIVO"
             ];
 
             // "COMISSIONADO", -- ja foi
@@ -36,7 +37,7 @@ class SyncFuncionarios extends Command
             // "CONCURSADO", não tem
             // "Terceiro", ja foi
 
-
+            $lastProcessedMatricula = $this->getLastProcessedMatricula();
 
             // Faz a requisição para o endpoint getFuncionarios
             $response = Http::timeout(120)->put('https://prefeitura.uberaba.mg.gov.br/GRP/portalcidadao/webservices/GFPFuncionario/getFuncionarios', [
@@ -49,6 +50,12 @@ class SyncFuncionarios extends Command
 
             // Itera sobre os funcionários retornados
             foreach ($data as $funcionarioData) {
+
+                if ($funcionarioData['matricula'] <= $lastProcessedMatricula) {
+                    $this->info('Dados já sincronizados ' . $lastProcessedMatricula . ' ' . $count+=1  );
+                    continue;
+                }
+
                 // Verifica se o funcionário está ativo
                 $active = ($funcionarioData['situacao'] === 'Ativo') ? true : false;
 
@@ -65,6 +72,7 @@ class SyncFuncionarios extends Command
                         'nome' => $funcionarioData['nome'],
                         'documento' => $funcionarioData['documento'],
                         'employee_type_id' => $employeeType->id ?? null,
+                        'last_synced_at' => Carbon::now(),
                     ]
                 );
 
@@ -176,6 +184,13 @@ class SyncFuncionarios extends Command
             // Captura qualquer outro tipo de exceção
             $this->error('Erro ao atualizar a localização do funcionário: ' . $e->getMessage());
         }
+    }
+
+    private function getLastProcessedMatricula() {
+
+        $lastEmployee = PublicEmployee::orderBy('last_synced_at', 'desc')->first();
+
+        return $lastEmployee ? $lastEmployee->matricula : 0;
     }
 
 

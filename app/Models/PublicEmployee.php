@@ -22,6 +22,7 @@ class PublicEmployee extends Model
         'carga_horaria',
         'latitude',
         'longitude',
+        'last_synced_at'
     ];
 
     // Relacionamento com os pagamentos
