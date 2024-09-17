@@ -19,8 +19,8 @@ class AtualizarDespesasDeputados extends Command
         $client = new Client();
 
         foreach ($deputados as $deputado) {
-            $this->importarDespesas($client, $deputado, 2022);
-            $this->importarDespesas($client, $deputado, 2023);
+            // $this->importarDespesas($client, $deputado, 2022);
+            // $this->importarDespesas($client, $deputado, 2023);
             $this->importarDespesas($client, $deputado, 2024);
 
             $this->info('Despesas atualizadas para o deputado: ' . $deputado->nome);
