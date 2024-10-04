@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
-use App\Models\Despesa; // Importe o modelo Despesa aqui
-use App\Models\Deputado; // Importe o modelo Despesa aqui
 use GuzzleHttp\Client;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
+use App\Models\Despesa;
+use App\Models\Deputado;
 
 
 class DeputadoController extends Controller
@@ -132,18 +134,79 @@ class DeputadoController extends Controller
         return response()->json($deputados);
     }
 
+    // public function deputadoDespesa(Request $request, $deputado_id)
+    // {
+
+    //     $page = $request->query('page', 1);
+    //     $despesas = Despesa::where('deputado_id', $deputado_id)
+    //                         ->orderBy('data_emissao', 'desc')
+    //                         ->orderBy('valor_liquido', 'desc')
+
+    //                         ->paginate(5, ['*'], 'page', $page);
+
+    //     return response()->json($despesas);
+    // }
+
     public function deputadoDespesa(Request $request, $deputado_id)
     {
+        try {
+            // Obter o número da página e itens por página
+            $page = $request->query('page', 1);
+            $perPage = 100; // Número de itens por página
 
-        $page = $request->query('page', 1);
-        $despesas = Despesa::where('deputado_id', $deputado_id)
-                            ->orderBy('data_emissao', 'desc')
-                            ->orderBy('valor_liquido', 'desc')
+            // Obter todas as despesas do deputado
+            $despesas = Despesa::where('deputado_id', $deputado_id)
+                ->orderBy('data_emissao', 'desc')
+                ->get();
 
-                            ->paginate(5, ['*'], 'page', $page);
+            // Agregar os valores por tipo de despesa
+            $tipoDespesas = [];
+            foreach ($despesas as $despesa) {
+                $valor = (float) $despesa->valor_liquido;
+                $tipoDespesa = $despesa->tipo_despesa;
 
-        return response()->json($despesas);
+                if (!isset($tipoDespesas[$tipoDespesa])) {
+                    $tipoDespesas[$tipoDespesa] = [
+                        'total' => $valor,
+                        'id' => $despesa->id // Incluindo o ID da primeira despesa encontrada para o tipo
+                    ];
+                } else {
+                    $tipoDespesas[$tipoDespesa]['total'] += $valor;
+                }
+            }
+
+            // Converter tipo_despesas para array de despesas agregadas
+            $resultado = [];
+            foreach ($tipoDespesas as $tipo => $dados) {
+                $resultado[] = [
+                    'id' => $dados['id'], // ID da primeira despesa encontrada para o tipo
+                    'tipo_despesa' => $tipo,
+                    'total' => $dados['total']
+                ];
+            }
+
+            // Ordenar pelo valor total em ordem decrescente
+            usort($resultado, function ($a, $b) {
+                return $b['total'] <=> $a['total'];
+            });
+
+            // Paginar os resultados
+            $currentPage = Paginator::resolveCurrentPage();
+            $currentItems = array_slice($resultado, ($currentPage - 1) * $perPage, $perPage);
+            $paginator = new LengthAwarePaginator($currentItems, count($resultado), $perPage, $currentPage, [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => 'page',
+            ]);
+
+            return response()->json($paginator);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'Deputado não encontrado'], 404);
+        }
     }
+
+
+
 
 //     public function atualizarSlugs()
 // {

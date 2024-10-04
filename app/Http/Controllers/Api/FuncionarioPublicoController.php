@@ -42,7 +42,7 @@ class FuncionarioPublicoController extends Controller
             ->selectRaw('employees_public.*, MAX(payments.amount) as max_salary, SUM(payments.descontos) as total_descontos')
             ->groupBy('employees_public.id')
             ->orderByDesc('max_salary')
-            ->paginate(300);
+            ->paginate(50);
 
         return response()->json([
             'total_employees' => $totalEmployees,

@@ -23,8 +23,7 @@ class SyncFuncionarios extends Command
         try {
             // Define a lista de vínculos a ser passada como parâmetro
             $listaVinculo = [
-
-              "AGENTE_POLITIVO"
+              "COMISSIONADO"
             ];
 
             // "COMISSIONADO", -- ja foi
@@ -37,7 +36,6 @@ class SyncFuncionarios extends Command
             // "CONCURSADO", não tem
             // "Terceiro", ja foi
 
-            $lastProcessedMatricula = $this->getLastProcessedMatricula();
 
             // Faz a requisição para o endpoint getFuncionarios
             $response = Http::timeout(120)->put('https://prefeitura.uberaba.mg.gov.br/GRP/portalcidadao/webservices/GFPFuncionario/getFuncionarios', [
@@ -51,10 +49,6 @@ class SyncFuncionarios extends Command
             // Itera sobre os funcionários retornados
             foreach ($data as $funcionarioData) {
 
-                if ($funcionarioData['matricula'] <= $lastProcessedMatricula) {
-                    $this->info('Dados já sincronizados ' . $lastProcessedMatricula . ' ' . $count+=1  );
-                    continue;
-                }
 
                 // Verifica se o funcionário está ativo
                 $active = ($funcionarioData['situacao'] === 'Ativo') ? true : false;
@@ -72,7 +66,7 @@ class SyncFuncionarios extends Command
                         'nome' => $funcionarioData['nome'],
                         'documento' => $funcionarioData['documento'],
                         'employee_type_id' => $employeeType->id ?? null,
-                        'last_synced_at' => Carbon::now(),
+
                     ]
                 );
 
@@ -186,12 +180,6 @@ class SyncFuncionarios extends Command
         }
     }
 
-    private function getLastProcessedMatricula() {
-
-        $lastEmployee = PublicEmployee::orderBy('last_synced_at', 'desc')->first();
-
-        return $lastEmployee ? $lastEmployee->matricula : 0;
-    }
 
 
 }
